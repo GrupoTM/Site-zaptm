@@ -76,6 +76,23 @@
   .nav-links-mobile{display:none}
 
   /* Hero */
+  /* Banner promocional rotativo */
+  .promo{position:relative; background:linear-gradient(100deg,#0E2038,#103224); border-bottom:1px solid var(--line); overflow:hidden}
+  .promo-track{max-width:1120px; margin:0 auto; padding:0 20px}
+  .promo-slide{display:none; align-items:center; justify-content:center; gap:16px; padding:15px 46px 19px; text-align:center; flex-wrap:wrap; min-height:62px}
+  .promo-slide.on{display:flex}
+  .promo-tag{background:var(--green); color:#052316; font-size:11px; font-weight:800; padding:4px 10px; border-radius:999px; letter-spacing:.03em; text-transform:uppercase}
+  .promo-slide p{font-size:15px; color:#EAF1F8; font-weight:500}
+  .promo-slide p b{color:var(--green); font-weight:800}
+  .promo-slide a.promo-cta{color:#fff; font-size:14px; font-weight:700; border-bottom:2px solid var(--green); padding-bottom:1px; white-space:nowrap}
+  .promo-arrow{position:absolute; top:50%; transform:translateY(-50%); background:rgba(255,255,255,.08); border:1px solid var(--line); color:#fff; width:30px; height:30px; border-radius:50%; cursor:pointer; display:grid; place-items:center; font-size:17px; line-height:1}
+  .promo-arrow:hover{background:rgba(255,255,255,.16)}
+  .promo-arrow.prev{left:10px}
+  .promo-arrow.next{right:10px}
+  .promo-dots{position:absolute; bottom:7px; left:50%; transform:translateX(-50%); display:flex; gap:6px}
+  .promo-dots span{width:6px; height:6px; border-radius:50%; background:rgba(255,255,255,.28); cursor:pointer; transition:width .2s, background .2s}
+  .promo-dots span.on{background:var(--green); width:16px; border-radius:3px}
+
   .hero{padding:64px 0 34px; position:relative}
   .hero-grid{display:grid; grid-template-columns:1.05fr .95fr; gap:48px; align-items:center}
   .eyebrow{display:inline-flex; align-items:center; gap:8px; color:var(--green);
@@ -109,6 +126,7 @@
   .reveal-on .bubble:nth-child(3){animation-delay:1.4s}
   .reveal-on .bubble:nth-child(4){animation-delay:1.9s}
   @keyframes pop{to{opacity:1; transform:translateY(0)}}
+
 
   /* Faixa de valor */
   .strip{border-top:1px solid var(--line); border-bottom:1px solid var(--line); margin-top:30px}
@@ -303,6 +321,30 @@
   </div>
 </header>
 
+<!-- BANNER PROMOCIONAL -->
+<div class="promo" id="promo">
+  <button class="promo-arrow prev" onclick="promoGo(-1)" aria-label="Anterior">&#8249;</button>
+  <div class="promo-track">
+    <div class="promo-slide on">
+      <span class="promo-tag">Oferta de lançamento</span>
+      <p>Primeiros clientes: <b>1 mês grátis</b> no plano Profissional</p>
+      <a class="promo-cta" href="#planos">Quero aproveitar</a>
+    </div>
+    <div class="promo-slide">
+      <span class="promo-tag">Rápido</span>
+      <p>Conecte hoje e comece a <b>vender ainda esta semana</b></p>
+      <a class="promo-cta" href="#planos">Ver planos</a>
+    </div>
+    <div class="promo-slide">
+      <span class="promo-tag">Indicação</span>
+      <p>Indique e ganhe <b>20% de desconto</b> na sua mensalidade</p>
+      <a class="promo-cta" href="https://wa.me/5571992559297?text=Ol%C3%A1!%20Quero%20saber%20do%20desconto%20por%20indica%C3%A7%C3%A3o." target="_blank" rel="noopener">Saber mais</a>
+    </div>
+  </div>
+  <button class="promo-arrow next" onclick="promoGo(1)" aria-label="Próximo">&#8250;</button>
+  <div class="promo-dots" id="promoDots"></div>
+</div>
+
 <main>
 
 <!-- HERO -->
@@ -322,7 +364,7 @@
       </div>
     </div>
 
-    <div class="phone" id="phone">
+<div class="phone" id="phone">
       <div class="phone-top">
         <div class="phone-av">TM</div>
         <div>
@@ -543,7 +585,7 @@
           <li><svg class="c" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6 9 17l-5-5"/></svg>Painel de acompanhamento</li>
           <li><svg class="c" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6 9 17l-5-5"/></svg>Setup assistido e 1 ajuste por mês</li>
         </ul>
-        <a href="https://wa.me/5581996474098?text=Ol%C3%A1!%20Tenho%20interesse%20no%20plano%20Essencial%20do%20ZAP%20TM." class="btn btn-ghost">Contratar Essencial</a>
+        <a href="https://wa.me/5571992559297?text=Ol%C3%A1!%20Tenho%20interesse%20no%20plano%20Essencial%20do%20ZAP%20TM." class="btn btn-ghost">Contratar Essencial</a>
       </div>
 
       <div class="plan pop">
@@ -560,7 +602,7 @@
           <li><svg class="c" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6 9 17l-5-5"/></svg>Acompanhamento quinzenal</li>
           <li><svg class="c" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6 9 17l-5-5"/></svg>Relatório de desempenho</li>
         </ul>
-        <a href="https://wa.me/5581996474098?text=Ol%C3%A1!%20Tenho%20interesse%20no%20plano%20Profissional%20do%20ZAP%20TM." class="btn btn-green">Contratar Profissional</a>
+        <a href="https://wa.me/5571992559297?text=Ol%C3%A1!%20Tenho%20interesse%20no%20plano%20Profissional%20do%20ZAP%20TM." class="btn btn-green">Contratar Profissional</a>
       </div>
 
       <div class="plan">
@@ -576,7 +618,7 @@
           <li><svg class="c" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6 9 17l-5-5"/></svg>Acompanhamento diário e correção de rota</li>
           <li><svg class="c" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6 9 17l-5-5"/></svg>Suporte prioritário</li>
         </ul>
-        <a href="https://wa.me/5581996474098?text=Ol%C3%A1!%20Tenho%20interesse%20no%20plano%20Performance%20do%20ZAP%20TM." class="btn btn-ghost">Contratar Performance</a>
+        <a href="https://wa.me/5571992559297?text=Ol%C3%A1!%20Tenho%20interesse%20no%20plano%20Performance%20do%20ZAP%20TM." class="btn btn-ghost">Contratar Performance</a>
       </div>
     </div>
     <div class="guarantee">
@@ -647,8 +689,8 @@
   <div class="wrap">
     <div class="final">
       <h2>Pronto para parar de perder venda no WhatsApp?</h2>
-      <p>Conecte seu número e coloque o ZAP TM para atender ainda hoje.</p>
-      <a href="https://wa.me/5581996474098?text=Ol%C3%A1!%20Quero%20contratar%20o%20ZAP%20TM." class="btn btn-white">Falar com o Grupo TM</a>
+          <p>Conecte seu número e coloque o ZAP TM para atender ainda hoje.</p>
+          <a href="https://wa.me/5571992559297?text=Ol%C3%A1!%20Quero%20contratar%20o%20ZAP%20TM." class="btn btn-white">Falar com o Grupo TM</a>
     </div>
   </div>
 </section>
@@ -697,6 +739,33 @@
     }, {threshold:.35});
     phones.forEach(function(p){ io.observe(p); });
   }
+
+  // Banner promocional rotativo
+  (function(){
+    var slides = document.querySelectorAll('.promo-slide');
+    var dotsBox = document.getElementById('promoDots');
+    var promo = document.getElementById('promo');
+    if(!slides.length || !promo) return;
+    var i = 0, timer;
+    slides.forEach(function(_, idx){
+      var d = document.createElement('span');
+      if(idx===0) d.className='on';
+      d.addEventListener('click', function(){ promoShow(idx); });
+      dotsBox.appendChild(d);
+    });
+    var dots = dotsBox.children;
+    window.promoShow = function(n){
+      slides[i].classList.remove('on'); dots[i].classList.remove('on');
+      i = (n + slides.length) % slides.length;
+      slides[i].classList.add('on'); dots[i].classList.add('on');
+      restart();
+    };
+    window.promoGo = function(d){ promoShow(i + d); };
+    function restart(){ clearInterval(timer); timer = setInterval(function(){ promoShow(i+1); }, 5000); }
+    promo.addEventListener('mouseenter', function(){ clearInterval(timer); });
+    promo.addEventListener('mouseleave', restart);
+    restart();
+  })();
 </script>
 </body>
 </html>
