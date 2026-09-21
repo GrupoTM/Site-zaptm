@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>ZAP TM · Área do cliente</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  :root{
+    color-scheme: dark;
+    --navy:#0A1A2F; --navy-2:#0E2038; --navy-3:#122A48;
+    --green:#19C37D; --green-strong:#12A867; --green-soft:#0E3B2C;
+    --white:#FFFFFF; --ink:#0B1B2E; --ink-2:#33475B;
+    --slate:#93A6BC; --slate-2:#6E829A; --line:rgba(255,255,255,.09);
+    box-sizing:border-box;
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  *,*::before,*::after{box-sizing:border-box}
+  body{margin:0; font-family:'Inter',system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
+    background:var(--navy); color:#EAF1F8; -webkit-font-smoothing:antialiased; line-height:1.5; min-height:100vh}
+  h1,h2,h3{margin:0; letter-spacing:-.02em; font-weight:800; line-height:1.15}
+  p{margin:0}
+  .logo{display:inline-flex; align-items:center; gap:10px; font-weight:800}
+  .logo-mark{width:36px; height:36px; border-radius:10px; background:var(--green);
+    display:grid; place-items:center; color:#052316; font-weight:900; font-size:14px;
+    box-shadow:0 6px 18px rgba(25,195,125,.35)}
+  .logo-txt{font-size:18px}
+  .logo-txt span{color:var(--green)}
+  .btn{display:inline-flex; align-items:center; justify-content:center; gap:8px; font-family:inherit;
+    font-weight:700; font-size:15px; border-radius:999px; cursor:pointer; border:1px solid transparent;
+    transition:background .2s, border-color .2s, transform .1s}
+  .btn:active{transform:translateY(1px)}
+  .btn:disabled{opacity:.6; cursor:default}
+  .btn-green{background:var(--green); color:#052316; padding:13px 22px}
+  .btn-green:hover{background:var(--green-strong)}
+  .btn-ghost{background:transparent; color:#fff; border-color:var(--line); padding:12px 20px}
+  .btn-ghost:hover{border-color:rgba(255,255,255,.3)}
+  .btn-block{width:100%}
+  .link{color:var(--green); font-weight:600; cursor:pointer; font-size:14px; background:none; border:none; font-family:inherit; padding:0}
+  .link:hover{text-decoration:underline}
+  .hidden{display:none !important}
+
+  .auth{min-height:100vh; display:grid; place-items:center; padding:28px 20px}
+  .auth-card{width:100%; max-width:400px}
+  .auth-head{text-align:center; margin-bottom:26px}
+  .auth-head .logo{justify-content:center; margin-bottom:22px}
+  .auth-head h1{font-size:23px; margin-bottom:8px}
+  .auth-head p{color:var(--slate); font-size:14.5px}
+  .card{background:var(--navy-2); border:1px solid var(--line); border-radius:22px; padding:28px}
+  .field{margin-bottom:16px}
+  .field label{display:block; font-size:13.5px; color:var(--slate); font-weight:600; margin-bottom:7px}
+  .field input{width:100%; background:var(--navy); border:1px solid var(--line); border-radius:12px;
+    padding:13px 15px; color:#fff; font-family:inherit; font-size:15px; outline:none; transition:border-color .2s}
+  .field input:focus{border-color:var(--green)}
+  .field input::placeholder{color:var(--slate-2)}
+  .auth-actions{margin-top:22px}
+  .auth-foot{display:flex; justify-content:space-between; margin-top:18px; gap:12px; flex-wrap:wrap}
+  .msg{font-size:13.5px; border-radius:12px; padding:12px 14px; margin-bottom:16px; line-height:1.5; display:none}
+  .msg.err{background:#3A1A1F; border:1px solid #7A3038; color:#F0B4B0; display:block}
+  .msg.info{background:var(--navy); border:1px solid var(--line); color:#CBD8E5; display:block}
+  .back{margin-top:20px; text-align:center}
+
+  .app{min-height:100vh}
+  .topbar{position:sticky; top:0; z-index:20; padding-top: env(safe-area-inset-top, 0px);
+    background:rgba(10,26,47,.85); backdrop-filter:blur(12px); border-bottom:1px solid var(--line)}
+  .topbar-in{max-width:1000px; margin:0 auto; padding:0 20px; height:64px; display:flex; align-items:center; justify-content:space-between}
+  .who{display:flex; align-items:center; gap:11px}
+  .who .av{width:38px; height:38px; border-radius:11px; background:var(--navy-3); display:grid; place-items:center;
+    color:var(--green); font-weight:800; font-size:14px}
+  .who b{font-size:15px; display:block; line-height:1.1}
+  .who span{font-size:12.5px; color:var(--slate)}
+  .main{max-width:1000px; margin:0 auto; padding:26px 20px 60px}
+
+  .period{display:flex; gap:7px; background:var(--navy-2); border:1px solid var(--line); border-radius:14px;
+    padding:6px; margin-bottom:24px; width:fit-content}
+  .period button{background:none; border:none; color:var(--slate); font-family:inherit; font-size:13px; font-weight:600;
+    padding:7px 15px; border-radius:9px; cursor:pointer}
+  .period button.on{background:var(--green); color:#052316}
+
+  .page-h{margin-bottom:20px}
+  .page-h h2{font-size:22px}
+  .page-h p{color:var(--slate); font-size:14px; margin-top:4px}
+
+  .summary{display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin-bottom:26px}
+  .sum{background:var(--navy-2); border:1px solid var(--line); border-radius:16px; padding:18px 20px}
+  .sum .v{font-size:26px; font-weight:800; letter-spacing:-.02em}
+  .sum .k{font-size:13px; color:var(--slate); margin-top:2px}
+
+  .lines{display:flex; flex-direction:column; gap:18px}
+  .line-card{background:var(--white); border-radius:22px; padding:22px; color:var(--ink)}
+  .line-top{display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:16px; flex-wrap:wrap}
+  .line-id{display:flex; align-items:center; gap:11px}
+  .line-id .av{width:40px; height:40px; border-radius:11px; background:var(--green); display:grid; place-items:center;
+    color:#052316; font-weight:900; font-size:14px}
+  .line-id b{color:var(--ink); font-size:15px; display:block; line-height:1.15}
+  .line-id .num{font-size:13px; color:var(--ink-2)}
+  .status{display:inline-flex; align-items:center; gap:7px; font-size:13px; font-weight:700; padding:6px 12px; border-radius:999px}
+  .status.on{background:#E7F8EF; color:#0B7C4E}
+  .status.on .dot{width:8px; height:8px; border-radius:50%; background:var(--green)}
+  .status.off{background:#FBEAEA; color:#B4443C}
+  .status.off .dot{width:8px; height:8px; border-radius:50%; background:#D9534F}
+
+  .metrics{display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:14px}
+  .metric{background:#F5F7FA; border-radius:14px; padding:16px}
+  .metric .v{font-size:28px; font-weight:800; color:var(--ink); letter-spacing:-.02em}
+  .metric .k{font-size:13px; color:var(--ink-2); margin-top:2px}
+  .metric .up{font-size:12.5px; font-weight:700; margin-top:8px; display:flex; align-items:center; gap:4px}
+  .metric .up.pos{color:#0B7C4E}
+  .metric .up.neg{color:#B4443C}
+  .metric .up.zero{color:var(--ink-2)}
+  .chartbox{background:#F5F7FA; border-radius:14px; padding:16px}
+  .chartbox .k{font-size:13px; color:var(--ink-2); font-weight:600; margin-bottom:12px}
+  .bars{display:flex; align-items:flex-end; gap:6px; height:74px}
+  .bars i{flex:1; background:var(--green); border-radius:5px 5px 3px 3px; opacity:.85; min-height:2px}
+  .line-cta{display:flex; justify-content:flex-end; margin-top:14px}
+  .btn-comm{display:inline-flex; align-items:center; gap:8px; background:var(--green); color:#052316;
+    border:none; border-radius:999px; padding:11px 18px; font-family:inherit; font-weight:700; font-size:14px;
+    cursor:pointer; text-decoration:none; transition:background .2s}
+  .btn-comm:hover{background:var(--green-strong)}
+
+  .empty{padding:26px 20px; text-align:center; background:#F5F7FA; border-radius:14px; color:var(--ink-2)}
+  .empty b{color:var(--ink); display:block; font-size:15px; margin-bottom:4px}
+  .empty p{font-size:13.5px}
+  .state{padding:40px 20px; text-align:center; color:var(--slate)}
+
+  @media (max-width:720px){
+    .summary{grid-template-columns:1fr; gap:10px}
+    .summary .sum{display:flex; align-items:baseline; gap:10px}
+  }
+</style>
+</head>
+<body>
+
+<!-- AUTH -->
+<div class="auth" id="authScreen">
+  <div class="auth-card">
+
+    <div id="viewLogin">
+      <div class="auth-head">
+        <span class="logo"><span class="logo-mark">TM</span><span class="logo-txt">ZAP <span>TM</span></span></span>
+        <h1>Área do cliente</h1>
+        <p>Acompanhe o seu robô e as suas conversas.</p>
+      </div>
+      <div class="card">
+        <div class="msg" id="loginMsg"></div>
+        <div class="field">
+          <label>Email</label>
+          <input type="email" id="loginEmail" placeholder="voce@empresa.com.br" autocomplete="username">
+        </div>
+        <div class="field">
+          <label>Senha</label>
+          <input type="password" id="loginPass" placeholder="Sua senha" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()">
+        </div>
+        <div class="auth-actions">
+          <button class="btn btn-green btn-block" id="loginBtn" onclick="doLogin()">Entrar</button>
+        </div>
+        <div class="auth-foot">
+          <button class="link" onclick="show('viewFirst')">Primeiro acesso</button>
+          <button class="link" onclick="show('viewRecover')">Esqueci minha senha</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="viewFirst" class="hidden">
+      <div class="auth-head">
+        <span class="logo"><span class="logo-mark">TM</span><span class="logo-txt">ZAP <span>TM</span></span></span>
+        <h1>Primeiro acesso</h1>
+      </div>
+      <div class="card">
+        <div class="msg info">Sua conta é criada pelo Grupo TM quando você contrata. Você recebe um link para definir a sua senha. Se ainda não recebeu, fale com o Grupo TM.</div>
+        <a class="btn btn-green btn-block" href="https://wa.me/5581996474098?text=Ol%C3%A1!%20Preciso%20de%20ajuda%20com%20o%20primeiro%20acesso%20%C3%A0%20%C3%A1rea%20do%20cliente." target="_blank" rel="noopener">Falar com o Grupo TM</a>
+        <div class="back"><button class="link" onclick="show('viewLogin')">Voltar ao login</button></div>
+      </div>
+    </div>
+
+    <div id="viewRecover" class="hidden">
+      <div class="auth-head">
+        <span class="logo"><span class="logo-mark">TM</span><span class="logo-txt">ZAP <span>TM</span></span></span>
+        <h1>Recuperar senha</h1>
+      </div>
+      <div class="card">
+        <div class="msg info">A recuperação de senha é feita pelo seu WhatsApp cadastrado. Toque abaixo para pedir o código ao Grupo TM.</div>
+        <a class="btn btn-green btn-block" href="https://wa.me/5581996474098?text=Ol%C3%A1!%20Preciso%20recuperar%20a%20senha%20da%20minha%20%C3%A1rea%20do%20cliente%20ZAP%20TM." target="_blank" rel="noopener">Recuperar pelo WhatsApp</a>
+        <div class="back"><button class="link" onclick="show('viewLogin')">Voltar ao login</button></div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- APP -->
+<div class="app hidden" id="appScreen">
+  <div class="topbar">
+    <div class="topbar-in">
+      <span class="logo"><span class="logo-mark">TM</span><span class="logo-txt">ZAP <span>TM</span></span></span>
+      <div class="who">
+        <div class="av" id="cliAv">--</div>
+        <div>
+          <b id="cliNome">Carregando</b>
+          <span id="cliPlano"></span>
+        </div>
+        <button class="btn btn-ghost" style="padding:8px 16px; font-size:14px; margin-left:8px" onclick="doLogout()">Sair</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="main">
+    <div class="period" id="period">
+      <button data-p="hoje" onclick="setPeriod('hoje',this)">Hoje</button>
+      <button data-p="7" class="on" onclick="setPeriod('7',this)">7 dias</button>
+      <button data-p="30" onclick="setPeriod('30',this)">30 dias</button>
+      <button data-p="tudo" onclick="setPeriod('tudo',this)">Tudo</button>
+    </div>
+
+    <div class="page-h">
+      <h2>Seus robôs</h2>
+      <p id="pageSub">Carregando...</p>
+    </div>
+
+    <div class="summary" id="summary"></div>
+    <div class="lines" id="lines"></div>
+    <div class="state hidden" id="stateBox"></div>
+  </div>
+</div>
+
+<script>
+  const SUPABASE_URL = 'https://oebwqhimbixboyjjrsiv.supabase.co';
+  const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9lYndxaGltYml4Ym95ampyc2l2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQzNzM0NjUsImV4cCI6MjA5OTk0OTQ2NX0.ZYYWHdmV0F7Wdna_1-Y8V7VDAtV3jClkq-eRfyJSZtg';
+  const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+  let CLIENTE = null, NUMEROS = [], METRICAS = [], PERIODO = '7';
+
+  function show(id){
+    ['viewLogin','viewFirst','viewRecover'].forEach(function(v){
+      document.getElementById(v).classList.toggle('hidden', v!==id);
+    });
+  }
+  function showAuth(){ document.getElementById('appScreen').classList.add('hidden'); document.getElementById('authScreen').classList.remove('hidden'); show('viewLogin'); }
+  function showApp(){ document.getElementById('authScreen').classList.add('hidden'); document.getElementById('appScreen').classList.remove('hidden'); window.scrollTo(0,0); }
+
+  async function doLogin(){
+    const email = document.getElementById('loginEmail').value.trim();
+    const pass = document.getElementById('loginPass').value;
+    const btn = document.getElementById('loginBtn');
+    const msg = document.getElementById('loginMsg');
+    msg.className = 'msg'; msg.textContent = '';
+    if(!email || !pass){ msg.className='msg err'; msg.textContent='Preencha email e senha.'; return; }
+    btn.disabled = true; btn.textContent = 'Entrando...';
+    const { error } = await sb.auth.signInWithPassword({ email: email, password: pass });
+    btn.disabled = false; btn.textContent = 'Entrar';
+    if(error){ msg.className='msg err'; msg.textContent='Email ou senha inválidos.'; return; }
+    showApp(); loadData();
+  }
+  async function doLogout(){ await sb.auth.signOut(); showAuth(); }
+
+  async function loadData(){
+    setState('Carregando seus dados...');
+    const { data: clientes, error: e1 } = await sb.from('zaptm_clientes').select('*').limit(1);
+    if(e1){ setState('Não foi possível carregar. Tente novamente.'); return; }
+    CLIENTE = clientes && clientes[0];
+    if(!CLIENTE){ setState('Sua conta ainda não tem cadastro liberado. Fale com o Grupo TM.'); return; }
+    if(CLIENTE.status === 'inativo'){ setState('Sua conta está inativa. Fale com o Grupo TM para regularizar.'); return; }
+
+    document.getElementById('cliNome').textContent = CLIENTE.empresa || CLIENTE.nome;
+    document.getElementById('cliAv').textContent = (CLIENTE.empresa || CLIENTE.nome || 'CL').substring(0,2).toUpperCase();
+    document.getElementById('cliPlano').textContent = 'Plano ' + (CLIENTE.plano ? CLIENTE.plano.charAt(0).toUpperCase()+CLIENTE.plano.slice(1) : '');
+
+    const { data: numeros } = await sb.from('zaptm_numeros').select('*').order('created_at');
+    NUMEROS = numeros || [];
+    const { data: metricas } = await sb.from('zaptm_metricas_diarias').select('*').order('dia');
+    METRICAS = metricas || [];
+
+    clearState();
+    renderPeriodo();
+  }
+
+  function ymd(d){ return d.toISOString().slice(0,10); }
+  function windowDays(p){
+    if(p==='hoje') return 1;
+    if(p==='7') return 7;
+    if(p==='30') return 30;
+    return null; // tudo
+  }
+  function rangeDays(n){
+    const out = [];
+    const today = new Date();
+    for(let i=n-1;i>=0;i--){ const d = new Date(today); d.setDate(today.getDate()-i); out.push(ymd(d)); }
+    return out;
+  }
+  function allDaysRange(){
+    if(METRICAS.length===0) return rangeDays(7);
+    const dias = METRICAS.map(m=>m.dia).sort();
+    const first = new Date(dias[0]); const today = new Date();
+    const out = []; const cur = new Date(first);
+    while(ymd(cur) <= ymd(today)){ out.push(ymd(cur)); cur.setDate(cur.getDate()+1); }
+    return out;
+  }
+
+  function sumFor(numeroId, dias){
+    let msg=0, conv=0;
+    METRICAS.forEach(function(m){
+      if(m.numero_id===numeroId && dias.indexOf(m.dia)>=0){ msg+=m.mensagens; conv+=m.conversas; }
+    });
+    return { msg: msg, conv: conv };
+  }
+  function seriesFor(numeroId, dias){
+    return dias.map(function(dia){
+      const m = METRICAS.find(function(x){ return x.numero_id===numeroId && x.dia===dia; });
+      return m ? m.mensagens : 0;
+    });
+  }
+
+  function renderPeriodo(){
+    const n = windowDays(PERIODO);
+    const curDays = n ? rangeDays(n) : allDaysRange();
+    const prevDays = n ? rangeDays(n*2).slice(0, n) : null; // janela anterior de mesmo tamanho
+    const rotulo = {hoje:'hoje', '7':'últimos 7 dias', '30':'últimos 30 dias', tudo:'todo o período'}[PERIODO];
+    document.getElementById('pageSub').textContent = NUMEROS.length + (NUMEROS.length===1?' número conectado · ':' números conectados · ') + rotulo;
+
+    // resumo
+    let totMsg=0, totConv=0, ativos=0;
+    NUMEROS.forEach(function(nm){ const s=sumFor(nm.id,curDays); totMsg+=s.msg; totConv+=s.conv; if(nm.status==='ativo') ativos++; });
+    document.getElementById('summary').innerHTML =
+      sumCard(totMsg.toLocaleString('pt-BR'),'Mensagens trocadas')
+      + sumCard(totConv.toLocaleString('pt-BR'),'Conversas')
+      + sumCard(String(ativos),'Números ativos');
+
+    // cards por número
+    const chartDays = curDays.slice(-30);
+    document.getElementById('lines').innerHTML = NUMEROS.map(function(nm){
+      const cur = sumFor(nm.id, curDays);
+      const chart = seriesFor(nm.id, chartDays);
+      const max = Math.max.apply(null, chart.concat([1]));
+      const bars = chart.map(function(v){ return '<i style="height:'+Math.round(v/max*100)+'%"></i>'; }).join('');
+      let upMsg='', upConv='';
+      if(prevDays){
+        const prev = sumFor(nm.id, prevDays);
+        upMsg = pctBadge(cur.msg, prev.msg);
+        upConv = pctBadge(cur.conv, prev.conv);
+      }
+      const ativo = nm.status==='ativo';
+      const comm = nm.painel_comercial_url
+        ? '<div class="line-cta"><a class="btn-comm" href="'+nm.painel_comercial_url+'" target="_blank" rel="noopener">Abrir painel comercial <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><path d="M15 3h6v6"/><path d="M10 14 21 3"/></svg></a></div>'
+        : '';
+      return '<div class="line-card">'
+        + '<div class="line-top"><div class="line-id"><div class="av">'+(nm.nome||'--').substring(0,2).toUpperCase()+'</div>'
+        + '<div><b>'+(nm.nome||'Número')+'</b><span class="num">'+(nm.numero||'')+'</span></div></div>'
+        + (ativo ? '<span class="status on"><span class="dot"></span>Robô ativo</span>' : '<span class="status off"><span class="dot"></span>Inativo</span>')
+        + '</div>'
+        + '<div class="metrics">'
+        + '<div class="metric"><div class="v">'+cur.msg.toLocaleString('pt-BR')+'</div><div class="k">Mensagens trocadas</div>'+upMsg+'</div>'
+        + '<div class="metric"><div class="v">'+cur.conv.toLocaleString('pt-BR')+'</div><div class="k">Conversas</div>'+upConv+'</div>'
+        + '</div>'
+        + '<div class="chartbox"><div class="k">Mensagens por dia · '+rotulo+'</div><div class="bars">'+bars+'</div></div>'
+        + comm
+        + '</div>';
+    }).join('');
+  }
+
+  function sumCard(v,k){ return '<div class="sum"><div class="v">'+v+'</div><div class="k">'+k+'</div></div>'; }
+  function pctBadge(cur, prev){
+    if(!prev || prev===0) return '';
+    const pct = Math.round((cur-prev)/prev*100);
+    const cls = pct>0?'pos':(pct<0?'neg':'zero');
+    const arrow = pct>=0 ? 'm5 15 7-7 7 7' : 'm5 9 7 7 7-7';
+    return '<div class="up '+cls+'"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="'+arrow+'"/></svg>'+Math.abs(pct)+'% vs. período anterior</div>';
+  }
+
+  function setPeriod(p, btn){
+    PERIODO = p;
+    document.querySelectorAll('.period button').forEach(function(b){ b.classList.remove('on'); });
+    btn.classList.add('on');
+    renderPeriodo();
+  }
+
+  function setState(txt){ const s=document.getElementById('stateBox'); s.textContent=txt; s.classList.remove('hidden');
+    document.getElementById('summary').innerHTML=''; document.getElementById('lines').innerHTML=''; }
+  function clearState(){ document.getElementById('stateBox').classList.add('hidden'); }
+
+  // sessão inicial
+  (async function(){
+    const { data:{ session } } = await sb.auth.getSession();
+    if(session){ showApp(); loadData(); } else { showAuth(); }
+  })();
+</script>
+</body>
+</html>
