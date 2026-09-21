@@ -33,6 +33,7 @@
   .hidden{display:none !important}
   input,select{width:100%; background:var(--navy); border:1px solid var(--line); border-radius:10px; padding:11px 13px; color:#fff; font-family:inherit; font-size:14.5px; outline:none}
   input:focus,select:focus{border-color:var(--green)}
+  input:disabled{opacity:.6; cursor:not-allowed}
   input::placeholder{color:var(--slate-2)}
   label{display:block; font-size:12.5px; color:var(--slate); font-weight:600; margin-bottom:6px}
   .msg{font-size:13.5px; border-radius:10px; padding:11px 13px; margin-bottom:14px; line-height:1.5; display:none}
@@ -69,11 +70,12 @@
   .cli-actions{margin-top:14px; display:flex; gap:8px; flex-wrap:wrap}
 
   .form-card{background:var(--navy-2); border:1px solid var(--green); border-radius:18px; padding:24px; margin-bottom:22px}
+  .form-card h3{font-size:16px; margin-bottom:16px}
   .grid2{display:grid; grid-template-columns:1fr 1fr; gap:14px}
   .num-row{display:grid; grid-template-columns:1fr 1fr 1.3fr auto; gap:10px; align-items:end; margin-bottom:10px}
   .num-row .rm{background:#3A1A1F; color:#F0B4B0; border:1px solid #7A3038; border-radius:9px; width:40px; height:42px; cursor:pointer; font-size:18px}
   .state{padding:36px 20px; text-align:center; color:var(--slate)}
-  @media (max-width:640px){ .grid2{grid-template-columns:1fr} .num-row{grid-template-columns:1fr 1fr; } .num-row .rm{width:100%} }
+  @media (max-width:640px){ .grid2{grid-template-columns:1fr} .num-row{grid-template-columns:1fr 1fr} .num-row .rm{width:100%} }
 </style>
 </head>
 <body>
@@ -106,10 +108,11 @@
   <div class="main">
     <div class="head-row">
       <h2>Clientes</h2>
-      <button class="btn btn-green btn-sm" id="novoBtn" onclick="toggleForm()">+ Novo cliente</button>
+      <button class="btn btn-green btn-sm" id="novoBtn" onclick="abrirNovo()">+ Novo cliente</button>
     </div>
 
     <div class="form-card hidden" id="formCard">
+      <h3 id="formTitle">Novo cliente</h3>
       <div class="msg" id="formMsg"></div>
       <div class="grid2">
         <div class="field"><label>Nome do responsável *</label><input id="f_nome" placeholder="Ex.: Maria Silva"></div>
@@ -123,7 +126,7 @@
             <option value="performance">Performance</option>
           </select>
         </div>
-        <div class="field"><label>Senha provisória *</label><input id="f_senha" placeholder="ex.: ZapTM2026" value=""></div>
+        <div class="field" id="senhaField"><label>Senha provisória *</label><input id="f_senha" placeholder="ex.: ZapTM2026"></div>
       </div>
 
       <div style="margin:6px 0 10px"><label>Números do cliente <span id="planoHint" style="color:var(--slate-2)"></span></label></div>
@@ -131,8 +134,8 @@
       <button class="link" id="addNum" onclick="addNumRow()">+ adicionar número</button>
 
       <div style="margin-top:18px; display:flex; gap:10px">
-        <button class="btn btn-green" id="salvarBtn" onclick="salvarCliente()">Cadastrar cliente</button>
-        <button class="btn btn-ghost" onclick="toggleForm()">Cancelar</button>
+        <button class="btn btn-green" id="salvarBtn" onclick="salvar()">Cadastrar cliente</button>
+        <button class="btn btn-ghost" onclick="fecharForm()">Cancelar</button>
       </div>
     </div>
 
@@ -146,6 +149,8 @@
   const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9lYndxaGltYml4Ym95ampyc2l2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQzNzM0NjUsImV4cCI6MjA5OTk0OTQ2NX0.ZYYWHdmV0F7Wdna_1-Y8V7VDAtV3jClkq-eRfyJSZtg';
   const FN_URL = SUPABASE_URL + '/functions/v1/zaptm-criar-cliente';
   const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+  let CLIENTES = [], NUMEROS = [], editId = null, numsRemovidos = [];
 
   function showAuth(){ document.getElementById('app').classList.add('hidden'); document.getElementById('authScreen').classList.remove('hidden'); }
   function showApp(){ document.getElementById('authScreen').classList.add('hidden'); document.getElementById('app').classList.remove('hidden'); }
@@ -186,15 +191,16 @@
     const { data:cli, error }=await sb.from('zaptm_clientes').select('*').order('created_at',{ascending:false});
     if(error){ setState('Erro ao carregar: '+error.message); return; }
     const { data:nums }=await sb.from('zaptm_numeros').select('*').order('created_at');
+    CLIENTES=cli||[]; NUMEROS=nums||[];
     clearState();
-    render(cli||[], nums||[]);
+    render();
   }
 
-  function render(cli, nums){
+  function render(){
     const box=document.getElementById('lista');
-    if(!cli.length){ box.innerHTML='<div class="state">Nenhum cliente cadastrado ainda. Clique em "+ Novo cliente".</div>'; return; }
-    box.innerHTML=cli.map(function(c){
-      const meus=nums.filter(function(n){ return n.cliente_id===c.id; });
+    if(!CLIENTES.length){ box.innerHTML='<div class="state">Nenhum cliente cadastrado ainda. Clique em "+ Novo cliente".</div>'; return; }
+    box.innerHTML=CLIENTES.map(function(c){
+      const meus=NUMEROS.filter(function(n){ return n.cliente_id===c.id; });
       const numsHtml=meus.length? meus.map(function(n){
         return '<div class="num"><div><div class="nlabel">'+esc(n.nome)+'</div><div class="nsub">'+esc(n.numero||'sem número')+'</div></div>'
           +(n.painel_comercial_url? '<a href="'+esc(n.painel_comercial_url)+'" target="_blank" rel="noopener">painel comercial</a>':'')+'</div>';
@@ -207,6 +213,7 @@
         +'<span class="pill '+(ativo?'ativo':'inativo')+'">'+(ativo?'Ativo':'Inativo')+'</span></div></div>'
         +'<div class="nums">'+numsHtml+'</div>'
         +'<div class="cli-actions">'
+        +'<button class="btn btn-ghost btn-sm" onclick="abrirEditar(\''+c.id+'\')">Editar</button>'
         +'<button class="btn '+(ativo?'btn-danger':'btn-green')+' btn-sm" onclick="toggleStatus(\''+c.id+'\',\''+(ativo?'inativo':'ativo')+'\')">'+(ativo?'Desativar':'Ativar')+'</button>'
         +'</div></div>';
     }).join('');
@@ -218,49 +225,108 @@
     carregar();
   }
 
-  // formulário
-  function toggleForm(){ const f=document.getElementById('formCard'); f.classList.toggle('hidden'); if(!f.classList.contains('hidden')){ if(!document.querySelectorAll('#numsForm .num-row').length){ addNumRow(); } planoHint(); } }
+  // ---- formulário (novo + editar) ----
+  function abrirNovo(){
+    editId=null; numsRemovidos=[];
+    document.getElementById('formTitle').textContent='Novo cliente';
+    document.getElementById('salvarBtn').textContent='Cadastrar cliente';
+    document.getElementById('senhaField').classList.remove('hidden');
+    document.getElementById('f_email').disabled=false;
+    ['f_nome','f_empresa','f_email','f_whatsapp','f_senha'].forEach(function(id){ document.getElementById(id).value=''; });
+    document.getElementById('f_plano').value='essencial';
+    document.getElementById('numsForm').innerHTML=''; addNumRow();
+    document.getElementById('formMsg').className='msg';
+    planoHint(); openForm();
+  }
+  function abrirEditar(id){
+    const c=CLIENTES.find(function(x){ return x.id===id; }); if(!c) return;
+    editId=id; numsRemovidos=[];
+    document.getElementById('formTitle').textContent='Editar cliente';
+    document.getElementById('salvarBtn').textContent='Salvar alterações';
+    document.getElementById('senhaField').classList.add('hidden');
+    document.getElementById('f_nome').value=c.nome||'';
+    document.getElementById('f_empresa').value=c.empresa||'';
+    document.getElementById('f_email').value=c.email||''; document.getElementById('f_email').disabled=true;
+    document.getElementById('f_whatsapp').value=c.whatsapp||'';
+    document.getElementById('f_plano').value=c.plano||'essencial';
+    document.getElementById('numsForm').innerHTML='';
+    const meus=NUMEROS.filter(function(n){ return n.cliente_id===id; });
+    if(meus.length){ meus.forEach(function(n){ addNumRow(n); }); } else { addNumRow(); }
+    document.getElementById('formMsg').className='msg';
+    planoHint(); openForm();
+  }
+  function openForm(){ document.getElementById('formCard').classList.remove('hidden'); document.getElementById('formCard').scrollIntoView({behavior:'smooth', block:'start'}); }
+  function fecharForm(){ document.getElementById('formCard').classList.add('hidden'); }
+
   function planoHint(){
     const p=document.getElementById('f_plano').value;
     const max=p==='performance'?3:1;
     document.getElementById('planoHint').textContent='('+p+' · até '+max+' número'+(max>1?'s':'')+')';
   }
-  function addNumRow(){
+  function addNumRow(n){
     if(document.querySelectorAll('#numsForm .num-row').length>=3) return;
     const div=document.createElement('div'); div.className='num-row';
+    div.dataset.id = (n && n.id) ? n.id : '';
     div.innerHTML='<div><label>Rótulo</label><input class="n_nome" placeholder="Ex.: Loja Centro"></div>'
       +'<div><label>Número</label><input class="n_numero" placeholder="+55 81 9...."></div>'
       +'<div><label>Link painel comercial</label><input class="n_url" placeholder="https://...hubgrupotm.com.br/"></div>'
-      +'<button class="rm" onclick="this.parentElement.remove()">×</button>';
+      +'<button class="rm" title="Remover">×</button>';
+    if(n){ div.querySelector('.n_nome').value=n.nome||''; div.querySelector('.n_numero').value=n.numero||''; div.querySelector('.n_url').value=n.painel_comercial_url||''; }
+    div.querySelector('.rm').addEventListener('click', function(){ removerNumRow(div); });
     document.getElementById('numsForm').appendChild(div);
   }
+  function removerNumRow(div){
+    const id=div.dataset.id;
+    if(id){
+      if(!confirm('Remover este número apaga também o histórico de métricas dele. Continuar?')) return;
+      numsRemovidos.push(id);
+    }
+    div.remove();
+  }
 
-  async function salvarCliente(){
+  async function salvar(){
     const msg=document.getElementById('formMsg'); msg.className='msg';
     const btn=document.getElementById('salvarBtn');
-    const payload={
+    const dados={
       nome:val('f_nome'), empresa:val('f_empresa'), email:val('f_email'),
-      whatsapp:val('f_whatsapp'), plano:document.getElementById('f_plano').value, senha:val('f_senha'),
-      numeros:[].map.call(document.querySelectorAll('#numsForm .num-row'), function(r){
-        return { nome:r.querySelector('.n_nome').value.trim(), numero:r.querySelector('.n_numero').value.trim(), painel_comercial_url:r.querySelector('.n_url').value.trim() };
-      }).filter(function(n){ return n.nome; })
+      whatsapp:val('f_whatsapp'), plano:document.getElementById('f_plano').value, senha:val('f_senha')
     };
-    if(!payload.nome||!payload.email||!payload.senha){ msg.className='msg err'; msg.textContent='Preencha nome, email e senha provisória.'; return; }
-    btn.disabled=true; btn.textContent='Cadastrando...';
+    const rows=[].map.call(document.querySelectorAll('#numsForm .num-row'), function(r){
+      return { id:r.dataset.id||null, nome:r.querySelector('.n_nome').value.trim(), numero:r.querySelector('.n_numero').value.trim(), painel_comercial_url:r.querySelector('.n_url').value.trim() };
+    });
+
+    if(!dados.nome || !dados.email){ msg.className='msg err'; msg.textContent='Preencha nome e email.'; return; }
+    btn.disabled=true; btn.textContent='Salvando...';
+
     try{
-      const { data:{ session } }=await sb.auth.getSession();
-      const res=await fetch(FN_URL, { method:'POST', headers:{ 'Content-Type':'application/json', 'Authorization':'Bearer '+session.access_token, 'apikey':SUPABASE_KEY }, body:JSON.stringify(payload) });
-      const out=await res.json();
-      if(!res.ok||out.error){ msg.className='msg err'; msg.textContent='Erro: '+(out.error||res.status); }
-      else{
+      if(editId===null){
+        // criar via função segura
+        if(!dados.senha){ msg.className='msg err'; msg.textContent='Defina a senha provisória.'; btn.disabled=false; btn.textContent='Cadastrar cliente'; return; }
+        dados.numeros=rows.filter(function(n){ return n.nome; });
+        const { data:{ session } }=await sb.auth.getSession();
+        const res=await fetch(FN_URL, { method:'POST', headers:{ 'Content-Type':'application/json', 'Authorization':'Bearer '+session.access_token, 'apikey':SUPABASE_KEY }, body:JSON.stringify(dados) });
+        const out=await res.json();
+        if(!res.ok||out.error){ throw new Error(out.error||('HTTP '+res.status)); }
         msg.className='msg ok';
-        msg.textContent='Cliente cadastrado. Envie ao cliente por WhatsApp: acesso em zaptm.hubgrupotm.com.br/painel-cliente.html, login '+payload.email+' e a senha provisória que você definiu.';
-        ['f_nome','f_empresa','f_email','f_whatsapp','f_senha'].forEach(function(id){ document.getElementById(id).value=''; });
-        document.getElementById('numsForm').innerHTML=''; addNumRow();
-        carregar();
+        msg.textContent='Cliente cadastrado. Envie por WhatsApp: acesso em zaptm.hubgrupotm.com.br/painel-cliente.html, login '+dados.email+' e a senha provisória.';
+      } else {
+        // editar direto (RLS)
+        const { error:e1 }=await sb.from('zaptm_clientes').update({ nome:dados.nome, empresa:dados.empresa||null, whatsapp:dados.whatsapp||null, plano:dados.plano }).eq('id', editId);
+        if(e1) throw new Error(e1.message);
+        // remover números marcados
+        if(numsRemovidos.length){ const { error:eDel }=await sb.from('zaptm_numeros').delete().in('id', numsRemovidos); if(eDel) throw new Error(eDel.message); }
+        // atualizar / inserir
+        for(const r of rows){
+          if(!r.nome) continue;
+          if(r.id){ const { error:eU }=await sb.from('zaptm_numeros').update({ nome:r.nome, numero:r.numero||null, painel_comercial_url:r.painel_comercial_url||null }).eq('id', r.id); if(eU) throw new Error(eU.message); }
+          else { const { error:eI }=await sb.from('zaptm_numeros').insert({ cliente_id:editId, nome:r.nome, numero:r.numero||null, painel_comercial_url:r.painel_comercial_url||null, status:'ativo' }); if(eI) throw new Error(eI.message); }
+        }
+        msg.className='msg ok'; msg.textContent='Alterações salvas.';
       }
-    }catch(e){ msg.className='msg err'; msg.textContent='Falha de conexão: '+e; }
-    btn.disabled=false; btn.textContent='Cadastrar cliente';
+      carregar();
+      setTimeout(fecharForm, 1200);
+    }catch(e){ msg.className='msg err'; msg.textContent='Erro: '+e.message; }
+    btn.disabled=false; btn.textContent = editId===null ? 'Cadastrar cliente' : 'Salvar alterações';
   }
 
   function val(id){ return document.getElementById(id).value.trim(); }
